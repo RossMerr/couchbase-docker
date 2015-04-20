@@ -1,4 +1,4 @@
-FROM debian:wheezy
+FROM ubuntu:14.04
 
 ENV CB_VERSION		3.0.3
 ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
