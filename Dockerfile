@@ -1,33 +1,77 @@
 FROM ubuntu:14.04
+ 
+# Basic environment setup
+# note: SpiderMonkey build req's: https://developer.mozilla.org/en-US/docs/Mozilla/Developer_guide/Build_Instructions/Linux_Prerequisites
+ENV DEBIAN_FRONTEND noninteractive
+RUN apt-get update \
+	&& apt-get install -y librtmp0 python-httplib2 language-pack-en-base vim wget \
+	&& dpkg-reconfigure locales
 
-ENV CB_VERSION		3.0.3
-ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
-ENV CB_PACKAGE		couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb
+# Downloading and Installing Couchbase
+ENV CB_VERSION 3.0.3
+ENV CB_FILENAME couchbase-server-enterprise_${CB_VERSION}-ubuntu12.04_amd64.deb
+ENV CB_SOURCE http://packages.couchbase.com/releases/$CB_VERSION/$CB_FILENAME
+RUN wget -O/tmp/$CB_FILENAME $CB_SOURCE  \ 
+	&& dpkg -i /tmp/$CB_FILENAME  \
+	&& rm /tmp/$CB_FILENAME
 
-# Add couchbase binaries to PATH
-ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+# SpiderMonkey, jsawk, and resty
+RUN apt-get install -y libmozjs-24-bin \
+	&& ln -s /usr/bin/js24 /usr/local/bin/js \
+	&& echo "export JS=/usr/local/bin/js" > /etc/jsawkrc \
+	&& wget -O/usr/local/bin/jsawk http://github.com/micha/jsawk/raw/master/jsawk \
+	&& wget -O/usr/local/bin/resty http://github.com/micha/resty/raw/master/resty \
+	&& chmod +x /usr/local/bin/jsawk /usr/local/bin/resty \
+	&& { \
+		echo ""; \
+		echo "source /usr/local/bin/resty -W 'http://localhost:8091/pools/default'"; \
+		echo ""; \
+	} >> /etc/bash.bashrc
 
-RUN apt-get update
+# Create directory structure for volume sharing
+RUN mkdir -p /app \
+	&& mkdir -p /app/data \
+	&& mkdir -p /app/index \
+	&& mkdir -p /app/resources \
+	&& mkdir -p /app/conf \
+	&& mkdir -p /app/backup \
+	&& chown -R couchbase:couchbase /app
+VOLUME ["/app/data"]
+VOLUME ["/app/backup"]
+VOLUME ["/app/volume"]
 
-RUN apt-get install -y \
-    hostname \
-    initscripts \
-    openssl \
-    sudo \
-    tar \
-    wget \
-    curl
+# Add bootstrapper
+ADD resources/docker-couchbase /usr/local/bin/docker-couchbase
+RUN export PATH=$PATH:/opt/couchbase/bin \
+	&& echo "export PATH=$PATH:/opt/couchbase/bin" >> /etc/bash.bashrc
+EXPOSE 8091 8092 11210
 
-# Install couchbase
-RUN wget $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
-RUN dpkg -i $CB_PACKAGE
+# Add a nicer bashrc config
+ADD https://raw.githubusercontent.com/lifegadget/bashrc/master/snippets/history.sh /etc/bash.history
+ADD https://raw.githubusercontent.com/lifegadget/bashrc/master/snippets/color.sh /etc/bash.color
+ADD https://raw.githubusercontent.com/lifegadget/bashrc/master/snippets/shortcuts.sh /etc/bash.shortcuts
+RUN { \
+		echo ""; \
+		echo 'source /etc/bash.history'; \
+		echo 'source /etc/bash.color'; \
+		echo 'source /etc/bash.shortcuts'; \
+	} >> /etc/bash.bashrc
 
-# Modify /etc/passwd to add a login shell, otherwise running
-#    su - couchbase -c "/opt/couchbase/bin/couchbase-server -- -noinput"
-# will give an error: 
-#    This account is currently not available.
-# This is only an issue on Couchbase Server 3.x, and it's a no-op on 2.x
-RUN sed -i -e 's/\/opt\/couchbase:\/sbin\/nologin/\/opt\/couchbase:\/bin\/sh/' /etc/passwd
+# Lumberjack
+RUN apt-get update \
+	&& apt-get install -yqq wget 
+ENV LUMBERJACK_VERSION 0.3.1
+RUN	wget --no-check-certificate -O/tmp/lumberjack_${LUMBERJACK_VERSION}_amd64.deb https://github.com/lifegadget/lumberjack-builder/raw/master/resources/lumberjack_${LUMBERJACK_VERSION}_amd64.deb \
+	&& dpkg -i /tmp/lumberjack_${LUMBERJACK_VERSION}_amd64.deb \
+	&& rm /tmp/lumberjack_${LUMBERJACK_VERSION}_amd64.deb 
+COPY resources/logstash-forwarder.conf /app/logstash-forwarder.conf
+# COPY resources/logstash-init /etc/init.d/lumberjack
+COPY resources/logstash-defaults /etc/default/lumberjack
 
-# Add start script
-ADD scripts/couchbase-start /usr/local/bin/
+# Add Resources
+ADD resources/couchbase.txt /app/resources/couchbase.txt
+ADD resources/docker.txt /app/resources/docker.txt
+ADD resources/default.conf /app/conf/default.conf
+
+ENTRYPOINT ["docker-couchbase"]
+CMD	["start"]
