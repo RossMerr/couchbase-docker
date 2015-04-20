@@ -10,10 +10,18 @@ ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/in
 RUN apt-get update
 
 RUN apt-get install -y \
-    wget 
+    hostname \
+    initscripts \
+    openssl \
+    pkgconfig \
+    sudo \
+    tar \
+    wget \
+    curl
 
 # Install couchbase
-RUN wget --quiet --output-document=- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install -
+# RUN wget --quiet --output-document=- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install -
+RUN curl -o- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install 
 
 # Modify /etc/passwd to add a login shell, otherwise running
 #    su - couchbase -c "/opt/couchbase/bin/couchbase-server -- -noinput"
