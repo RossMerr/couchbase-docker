@@ -7,6 +7,11 @@ ENV CB_PACKAGE		couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb
 # Add couchbase binaries to PATH
 ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
+RUN apt-get update
+
+RUN apt-get install -y \
+    wget 
+
 # Install couchbase
 RUN wget --quiet --output-document=- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install -
 
