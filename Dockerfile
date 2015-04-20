@@ -2,7 +2,7 @@ FROM debian:wheezy
 
 ENV CB_VERSION		3.0.3
 ENV CB_RELEASE_URL	http://packages.couchbase.com/releases
-ENV CB_PACKAGE		couchbase-server-enterprise_3.0.3-ubuntu12.04_x86.deb
+ENV CB_PACKAGE		couchbase-server-enterprise_3.0.3-ubuntu12.04_amd64.deb
 
 # Add couchbase binaries to PATH
 ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
