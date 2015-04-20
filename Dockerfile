@@ -19,8 +19,8 @@ RUN apt-get install -y \
     curl
 
 # Install couchbase
-# RUN wget --quiet --output-document=- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install -
-RUN curl -o- $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE | dpkg --install 
+RUN wget $CB_RELEASE_URL/$CB_VERSION/$CB_PACKAGE
+RUN dpkg -i $CB_PACKAGE
 
 # Modify /etc/passwd to add a login shell, otherwise running
 #    su - couchbase -c "/opt/couchbase/bin/couchbase-server -- -noinput"
