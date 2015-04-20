@@ -13,7 +13,6 @@ RUN apt-get install -y \
     hostname \
     initscripts \
     openssl \
-    pkgconfig \
     sudo \
     tar \
     wget \
