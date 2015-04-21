@@ -4,12 +4,12 @@ ENV CB_VERSION		3.0.3
 ENV CB_FILENAME		couchbase-server-enterprise_${CB_VERSION}-ubuntu12.04_amd64.deb
 ENV CB_SOURCE 		http://packages.couchbase.com/releases/$CB_VERSION/$CB_PACKAGE
 
-
 # Add couchbase binaries to PATH
-ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
+# ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-# Install yum dependencies
 RUN apt-get update
+
+# Install packages dependencies
 RUN apt-get -y install 
 	wget \
 	curl \
@@ -18,7 +18,7 @@ RUN apt-get -y install
 
 
 # Install couchbase
-RUN wget -O/tmp/$CB_FILENAME $CB_SOURCE  \ 
+RUN wget $CB_SOURCE -O /tmp/$CB_FILENAME \ 
 	&& dpkg -i /tmp/$CB_FILENAME  \
 	&& rm /tmp/$CB_FILENAME
 
