@@ -7,10 +7,8 @@ ENV CB_SOURCE 		http://packages.couchbase.com/releases/$CB_VERSION/$CB_PACKAGE
 # Add couchbase binaries to PATH
 # ENV PATH $PATH:/opt/couchbase/bin:/opt/couchbase/bin/tools:/opt/couchbase/bin/install
 
-RUN apt-get update
-
 # Install packages dependencies
-RUN apt-get -y install 
+RUN apt-get update && apt-get -y install \
 	wget \
 	curl \
 	librtmp0 \
